@@ -33,6 +33,9 @@ setup(
     install_requires=
     [
         'click',
+        'pyunpack',
+        'urllib3',
+        'wget',
     ] + test_deps,
     package_dir={'pyposto_def_configs': 'pyposto_def_configs'},
     package_data={
