@@ -36,13 +36,6 @@ setup(
         'pyunpack',
         'urllib3',
         'wget',
+        'pyyaml',
     ] + test_deps,
-    package_dir={'pyposto_def_configs': 'pyposto_def_configs'},
-    package_data={
-        'pyposto_def_configs': [
-            'pyposto_def_configs/*.yml',
-            'pyposto_def_configs/*.yaml',
-        ]
-    },
-    include_package_data=True
 )

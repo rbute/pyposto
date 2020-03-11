@@ -1,12 +1,13 @@
 import unittest
 
-from pyposto.decorators import do
+from pyposto.decorators import do, config
 
 
 def hello():
     print('helloz')
 
 
+@config('configs/static_lib_cpp.yml')
 @do(hello)
 def world():
     print('world')

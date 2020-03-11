@@ -85,3 +85,8 @@ __all__ = [
     'desktop_app_c',
     'desktop_app_cpp',
 ]
+
+if __name__ == '__main__':
+    import yaml
+
+    print(yaml.dump(common_cofig))

@@ -1,6 +1,6 @@
-from pyposto.decorators import do
+from pyposto.decorators import do, config
 
 __all__ = [
     # Decorators
-    'do'
+    'do', 'config'
 ]
