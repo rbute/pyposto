@@ -37,5 +37,8 @@ setup(
         'urllib3',
         'wget',
         'pyyaml',
+        'urllib3',
+        'wget',
+        'patool'
     ] + test_deps,
 )
