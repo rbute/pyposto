@@ -1,5 +1,6 @@
 import os.path
 import platform
+import re
 import urllib.parse as uparse
 
 import wget
@@ -20,11 +21,16 @@ def dl_raw(url: str, folder: str = None):
 
 
 def setup_compiler_tool(conf):
-    file_name = os.path.join(conf['pyposto_dirs']['raw'], get_url_file_name(conf['compiler_bin_url']))
-    if not os.path.exists(file_name):
+    file_name: str = get_url_file_name(conf['compiler_bin_url'])
+    file_name_path: str = os.path.join(conf['pyposto_dirs']['raw'], file_name)
+    if not os.path.exists(file_name_path):
         dl_raw(conf['compiler_bin_url'], conf['pyposto_dirs']['raw'])
-        extract_all(file_name, conf['pyposto_dirs']['tools'])
-
+        extract_all(file_name_path, conf['pyposto_dirs']['tools'])
+    conf['pyposto_dirs']['compiler_path'] = \
+        os.path.join(conf['pyposto_dirs']['tools'], re.sub(
+            '(.tar)|(.gz)|(.xz)|(.zip)|(.z)|(.7z)|(.bz)|(.bz2)'
+            , '', file_name))
+    conf['compiler'] = os.path.join(conf['pyposto_dirs']['compiler_path'], 'bin', 'clang')
 
 
 def os_config_homogenizer(conf):
@@ -34,7 +40,7 @@ def os_config_homogenizer(conf):
     conf.pop('_os_overrides_')
 
 
-def setup_home2(conf):
+def setup_home(conf):
     user_home = os.path.expanduser('~')
     conf['pyposto_dirs'] = {
         'root': os.path.join(user_home, '.pyposto'),
@@ -46,6 +52,32 @@ def setup_home2(conf):
     }
     for k, v in conf['pyposto_dirs'].items():
         os.makedirs(v, mode=0o770, exist_ok=True)
+
+
+def setup_project(conf):
+    project_home = os.path.abspath('.') if not '_project_root_' in conf else conf['_project_root_']
+    conf['project_dirs'] = {
+        'root': os.path.join(project_home),
+        'cache': os.path.join(project_home, '.pyposto', 'cache'),
+        'build': os.path.join(project_home, '.pyposto', 'build'),
+        'temp': os.path.join(project_home, '.pyposto', 'temp'),
+        'src': os.path.join(project_home, 'src'),
+        'include': os.path.join(project_home, 'include'),
+        'tests': os.path.join(project_home, 'tests'),
+        'libs': os.path.join(project_home, 'libs'),
+        'bins': os.path.join(project_home, 'bins'),
+        'pkg': os.path.join(project_home, 'pkg'),
+        'man': os.path.join(project_home, 'man'),
+        'docs': os.path.join(project_home, 'docs'),
+    }
+    for k, v in conf['project_dirs'].items():
+        os.makedirs(v, mode=0o770, exist_ok=True)
+
+
+def compile_project(config):
+    bin_files_dir = config['project_dirs']['bins']
+    libs_files_dir = config['project_dirs']['libs']
+    header_files_dir = config['project_dirs']['include']
 
 
 @ppd.config({
@@ -72,10 +104,12 @@ def setup_home2(conf):
     'version': '',
 })
 @ppd.do(os_config_homogenizer)
-@ppd.do(setup_home2)
+@ppd.do(setup_home)
+@ppd.do(setup_project)
 @ppd.do(setup_compiler_tool)
+@ppd.do(compile_project)
 def compile_c_app(conf):
-    print('Example compilation step')
+    pass
 
 
 if __name__ == '__main__':
