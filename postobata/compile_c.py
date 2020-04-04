@@ -1,6 +1,7 @@
 import os.path
 import platform
 import re
+import subprocess
 import urllib.parse as uparse
 
 import wget
@@ -15,8 +16,8 @@ extract_all = lambda archive, destination: Archive(archive).extractall(destinati
 def dl_raw(url: str, folder: str = None):
     p_url: uparse.ParseResult = uparse.urlparse(url)
     file_name: str = get_url_file_name(p_url.path)
-    if folder:
-        file_name = os.path.join(folder, file_name)
+    file_name = os.path.join(folder, file_name)
+    if not os.path.exists(file_name):
         wget.download(url, out=file_name)
 
 
@@ -77,7 +78,42 @@ def setup_project(conf):
 def compile_project(config):
     bin_files_dir = config['project_dirs']['bins']
     libs_files_dir = config['project_dirs']['libs']
+    build_dir = config['project_dirs']['build']
     header_files_dir = config['project_dirs']['include']
+    bin_files = club_files(
+        [(tuple(path.replace(bin_files_dir, '').split('/'))[1:], file) for path, dirs, files in os.walk(bin_files_dir)
+         for file in files if file.find('.c') >= 0])
+    libs_files = club_files(
+        [(tuple(path.replace(libs_files_dir, '').split('/'))[1:], file) for path, dirs, files in os.walk(libs_files_dir)
+         for file in files if file.find('.c') >= 0])
+    base_command: list = ['gcc', '-shared', '-Wall', f'-I{header_files_dir}']
+    shared_objects: list = []
+    for lib, files in libs_files.items():
+        in_files: list = [os.path.abspath(os.path.join(libs_files_dir, *lib, file)) for file in files]
+        so_name: str = f'lib{lib[-1]}.so'
+        so_path: str = os.path.join(build_dir, so_name)
+        shared_objects.append(lib[-1])
+        final_command = base_command + in_files + ['-o', so_path]
+        subprocess.call(final_command)
+    bins: list = []
+    bin_base_command: list = ['gcc', f'-L{build_dir}'] + [f'-l{obj}' for obj in shared_objects]
+    for fol, files in bin_files.items():
+        for file in files:
+            out_bin: str = file.replace('.c', '')
+            out_bin_path: str = os.path.join(build_dir, out_bin)
+            in_file = os.path.abspath(os.path.join(bin_files_dir, *fol, file))
+            bins.append(out_bin)
+            subprocess.call(bin_base_command + [in_file, '-o', out_bin_path])
+
+
+def club_files(lib_files):
+    files: dict = {}
+    for lib, file in lib_files:
+        if lib in files:
+            files[lib].append(file)
+        else:
+            files[lib] = [file]
+    return files
 
 
 @ppd.config({
