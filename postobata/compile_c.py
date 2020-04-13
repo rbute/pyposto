@@ -11,8 +11,15 @@ from pyunpack import Archive
 
 import pyposto.decorators as ppd
 
-get_url_file_name = lambda name: name[name.rfind('/') + 1:]
-extract_all = lambda archive, destination: Archive(archive).extractall(destination)
+
+def get_url_file_name(name: str):
+    return name[name.rfind('/') + 1:]
+
+
+def extract_all(archive, destination):
+    Archive(archive).extractall(destination)
+
+
 config_default = {
     '_os_overrides_': {
         'Linux': {
@@ -59,7 +66,6 @@ def setup_compiler_tool(conf):
 
 
 def os_config_homogenizer(conf):
-    os_conf: dict = {}
     if platform.system():
         conf.update(conf['_os_overrides_'][platform.system()])
     conf.pop('_os_overrides_')
@@ -168,26 +174,30 @@ def pack_artefacts(config):
         tar.add(build_dir, arcname='')
 
 
-@ppd.config(config_default)
+def set_config(conf):
+    conf.update(config_default)
+
+
+@ppd.do(set_config)
 @ppd.do(os_config_homogenizer)
 @ppd.do(setup_home)
 @ppd.do(setup_project)
 @ppd.do(setup_compiler_tool)
 @ppd.do(compile_project)
-def compile_c_app(conf):
+def compile_app(conf):
     pass
 
 
-@ppd.config(config_default)
+@ppd.do(set_config)
 @ppd.do(os_config_homogenizer)
 @ppd.do(setup_home)
 @ppd.do(setup_project)
 @ppd.do(setup_compiler_tool)
 @ppd.do(pack_artefacts)
-def cache_local(conf):
+def yield_app(conf):
     pass
 
 
 if __name__ == '__main__':
-    cache_local()
+    yield_app()
     # compile_c_app()

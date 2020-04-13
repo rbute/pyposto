@@ -39,6 +39,12 @@ setup(
         'pyyaml',
         'urllib3',
         'wget',
-        'patool'
+        'patool',
+        'reentry',
     ] + test_deps,
+    entry_points={
+        'console_scripts': [
+            'pyposto=pyposto:step'
+        ],
+    }
 )
