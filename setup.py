@@ -41,10 +41,14 @@ setup(
         'wget',
         'patool',
         'reentry',
+        'click_plugins',
     ] + test_deps,
     entry_points={
         'console_scripts': [
             'pyposto=pyposto:step'
         ],
+        'pyposto_plugins': [
+            'setup2=postobata.cposto:setup'
+        ]
     }
 )

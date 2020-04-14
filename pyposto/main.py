@@ -5,7 +5,9 @@ from os.path import join as pjoin
 
 import click
 import yaml
+from click_plugins import with_plugins
 from pip._internal import main as pipmain
+from reentry import manager
 
 HOME_DIR = click.get_app_dir('pyposto', force_posix=True, roaming=False)
 
@@ -43,6 +45,7 @@ def _setup_project(ctx):
         ctx['_build_override_'] = yaml.load(open(build_local_override, 'r'), yaml.Loader)
 
 
+@with_plugins(manager.iter_entry_points('pyposto_plugins'))
 @click.group(name='pyposto')
 @click.option(
     '--home-dir',
@@ -62,6 +65,7 @@ def step(ctx, home_dir):
     plugin_spec = importlib.util.find_spec(build_plugin)
     if not plugin_spec:
         pipmain(['install', build_plugin])
+    manager.scan()
 
 
 @step.command()
