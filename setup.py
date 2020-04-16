@@ -48,7 +48,8 @@ setup(
             'pyposto=pyposto:step'
         ],
         'pyposto_plugins': [
-            'setup2=postobata.cposto:setup'
+            'setup2=postobata.cposto:setup',
+            'setup21=postobata.cposto:setup'
         ]
     }
 )

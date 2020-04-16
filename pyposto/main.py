@@ -4,8 +4,8 @@ from os import makedirs
 from os.path import join as pjoin
 
 import click
+import pkg_resources
 import yaml
-from click_plugins import with_plugins
 from pip._internal import main as pipmain
 from reentry import manager
 
@@ -45,8 +45,44 @@ def _setup_project(ctx):
         ctx['_build_override_'] = yaml.load(open(build_local_override, 'r'), yaml.Loader)
 
 
-@with_plugins(manager.iter_entry_points('pyposto_plugins'))
-@click.group(name='pyposto')
+class PostoMainCommand(click.Group):
+
+    def list_commands(self, ctx):
+        all_commands: list = sorted(self.commands)
+        try:
+            if os.path.exists('build_recipe.yml'):
+                build_plugin = yaml.load(open('build_recipe.yml', 'r'), yaml.SafeLoader)['builder_plugin']
+                all_commands = all_commands + list(
+                    pkg_resources.get_entry_map(build_plugin).get('pyposto_plugins', {}).keys())
+        except Exception:
+            pass
+
+        return all_commands
+
+    def get_command(self, ctx, cmd_name):
+        cmd = click.Group.get_command(self, ctx, cmd_name)
+        if cmd:
+            return cmd
+        else:
+            try:
+                ctx.obj = {}
+                ctx.obj['pyposto_dirs'] = posto_dirs(ctx.params['home_dir'])
+                _setup_project(ctx.obj)
+                build_plugin = ctx.obj['project_data']['builder_plugin']
+                plugin_spec = importlib.util.find_spec(build_plugin)
+                if not plugin_spec:
+                    pipmain(['install', build_plugin])
+                manager.scan()
+                # TODO: Right now build plugin name is just a string, it is supposed to break here
+                entry_point = pkg_resources.get_entry_map(build_plugin).get(cmd_name)
+                # TODO: Create command from entrypoint
+                return click.Group.get_command(self, ctx, entry_point)
+            except:
+                return None
+
+
+# @click.group(name='pyposto')
+@click.command('pyposto', cls=PostoMainCommand)
 @click.option(
     '--home-dir',
     type=click.STRING,
@@ -58,7 +94,7 @@ def _setup_project(ctx):
 )
 @click.pass_context
 def step(ctx, home_dir):
-    ctx.ensure_object(dict)
+    ctx.obj = {}
     ctx.obj['pyposto_dirs'] = posto_dirs(home_dir)
     _setup_project(ctx.obj)
     build_plugin = ctx.obj['project_data']['builder_plugin']
@@ -69,9 +105,8 @@ def step(ctx, home_dir):
 
 
 @step.command()
-@click.pass_context
-def setup(ctx):
-    ctx.ensure_object(dict)
+@click.pass_obj
+def setup(obj):
     click.secho('Inside setup', color='red')
 
 
