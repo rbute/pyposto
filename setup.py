@@ -1,3 +1,5 @@
+import os
+
 from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
@@ -9,7 +11,7 @@ test_deps: [] = [
 
 setup(
     name="pyposto",
-    version="0.0.1",
+    version="0.0.2",
     author="Rakesh Bute",
     author_email="rakeshbute@gmail.com",
     description="Write Python functions as build steps ",
@@ -48,8 +50,7 @@ setup(
             'pyposto=pyposto:step'
         ],
         'pyposto_plugins': [
-            'setup2=postobata.cposto:setup',
-            'setup21=postobata.cposto:setup'
+            'my_setup=postobata.cposto:my_setup',
         ]
     }
 )

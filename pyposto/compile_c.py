@@ -87,7 +87,7 @@ def setup_home(conf):
 
 
 def setup_project(conf):
-    project_home = os.path.abspath('.') if not '_project_root_' in conf else conf['_project_root_']
+    project_home = os.path.abspath('../postobata') if not '_project_root_' in conf else conf['_project_root_']
 
     build_recipe_file = os.path.join(project_home, 'build_recipe.yml') if not '_build_recipe_' in conf else conf[
         '_build_recipe_']

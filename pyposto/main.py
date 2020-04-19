@@ -74,15 +74,16 @@ class PostoMainCommand(click.Group):
                     pipmain(['install', build_plugin])
                 manager.scan()
                 # TODO: Right now build plugin name is just a string, it is supposed to break here
-                entry_point = pkg_resources.get_entry_map(build_plugin).get(cmd_name)
+                entry_point = pkg_resources.get_entry_map(build_plugin).get('pyposto_plugins', {}).get(cmd_name)
                 # TODO: Create command from entrypoint
-                return click.Group.get_command(self, ctx, entry_point)
+                loaded_command = None if not entry_point else entry_point.load()
+                return loaded_command
             except:
                 return None
 
 
 # @click.group(name='pyposto')
-@click.command('pyposto', cls=PostoMainCommand)
+@click.command(cls=PostoMainCommand)
 @click.option(
     '--home-dir',
     type=click.STRING,
