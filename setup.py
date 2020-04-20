@@ -1,5 +1,3 @@
-import os
-
 from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
@@ -48,9 +46,6 @@ setup(
     entry_points={
         'console_scripts': [
             'pyposto=pyposto:step'
-        ],
-        'pyposto_plugins': [
-            'my_setup=postobata.cposto:my_setup',
         ]
     }
 )

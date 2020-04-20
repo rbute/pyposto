@@ -8,14 +8,14 @@ import click
 import wget
 import yaml
 from pip._internal import main as pipmain
-from pkg_resources import iter_entry_points
+from pkg_resources import get_entry_map
 from pyunpack import Archive
 from reentry import manager
 
 HOME_DIR = click.get_app_dir('pyposto', force_posix=True, roaming=False)
 BUILD_FILE_NAME = os.getenv('BUILD_RECIPE', 'build_recipe.yml')
 BUILD_FILE_PATH = pjoin('.', os.getenv('BUILD_RECIPE', 'build_recipe.yml'))
-PLUGIN_ENTRYPOINT_GROUP = 'pypopsto'
+PLUGIN_ENTRYPOINT_GROUP = 'pyposto'
 
 
 class utils(object):
@@ -46,6 +46,22 @@ class utils(object):
         if not os.path.exists(file_name):
             wget.download(url, out=file_name)
         return file_name
+
+
+class PpcCLI(click.Group):
+
+    def __init__(self, build_plugin_name=None, **attrs):
+        click.Group.__init__(self, **attrs)
+        self.build_plugin_name = build_plugin_name
+
+    def list_commands(self, ctx):
+        rv = list(get_entry_map(self.build_plugin_name).get(PLUGIN_ENTRYPOINT_GROUP, {}).keys())
+        return sorted(rv)
+
+    def get_command(self, ctx, name):
+        ep_list: list = [a for a in list(get_entry_map(self.build_plugin_name).get(PLUGIN_ENTRYPOINT_GROUP, {}))]
+        ep = None if not ep_list else ep_list[0].load()
+        return ep
 
 
 class starter(object):
@@ -83,9 +99,9 @@ class starter(object):
 
     @classmethod
     def _get_plugin_entrypoints(cls, pkg):
-        return {
-            a.name: a.load() for a in list(iter_entry_points(PLUGIN_ENTRYPOINT_GROUP))
-        }
+        ep_map = get_entry_map(pkg).get(PLUGIN_ENTRYPOINT_GROUP, {})
+        ep_map = {k: v.load() for k, v in ep_map.items()}
+        return ep_map
 
     @classmethod
     def create_context(cls):
@@ -93,21 +109,23 @@ class starter(object):
         build_plugin = None
         try:
             if os.path.exists(build_file_path):
-                build_plugin = yaml.load(build_file_path, yaml.SafeLoader)['builder_plugin']
+                build_plugin = yaml.load(open(build_file_path, 'r'), yaml.SafeLoader)['builder_plugin']
         except Exception:
             pass
         if build_plugin and not importlib.util.find_spec(build_plugin):
             pipmain(['install', build_plugin])
-        return {
+        data = {
             'context_settings': {
                 'obj': {
-                    'name': 'rakesh',
                     'pyposto_dirs': cls._posto_dirs(HOME_DIR),
                 }
             },
-            # 'commands': cls._get_plugin_entrypoints(''),
+            'commands': cls._get_plugin_entrypoints(build_plugin),
             'chain': True,
+            'cls': PpcCLI,
+            'build_plugin_name': build_plugin,
         }
+        return data
 
 
 @click.group(**starter.create_context())
